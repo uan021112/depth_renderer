@@ -1,0 +1,14 @@
+scene:
+  intrinsic_path: /home/tcluan/C-Code/tools/pt_utils/test/intrinsic/frame-000001.intrinsic_color.txt
+  pose_path: /home/tcluan/C-Code/tools/pt_utils/test/pose/frame-000000.pose.txt
+  mesh_path: /home/tcluan/C-Code/tools/pt_utils/test/textured_output.obj
+
+render:
+  sensor_width: 36.0
+  width: 1920
+  height: 1440
+  zNear: 0.01
+  zFar: 8.0
+
+output:
+  depth_path: /home/tcluan/C-Code/tools/pt_utils/test/depth

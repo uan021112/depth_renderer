@@ -1,0 +1,9 @@
+scene:
+  workspace_path: /home/tcluan/C-Code/tools/pt_utils/test/
+
+render:
+  sensor_width: 36.0
+  width: 1920
+  height: 1440
+  zNear: 0.01
+  zFar: 8.0
