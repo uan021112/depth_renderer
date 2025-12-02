@@ -3,7 +3,8 @@ from pathlib import Path
 
 import yaml
 
-from .io_utils import parse_workspace_path, get_camera_param_file_path
+from dataloader import parse_workspace_path_callback
+from .io_utils import get_intrinsic_file_path, get_pose_file_path
 from .blender_utils import import_mesh, import_camera, render_depth
 
 
@@ -20,14 +21,45 @@ def render_single_view(cfg_path='/home/tcluan/C-Code/tools/pt_utils/configs/rend
     render_depth(scene, cfg['render']['zNear'], cfg['render']['zFar'], cfg['output']['depth_path'])
 
 
-def render_batch_3DScanner(cfg_path='/home/tcluan/C-Code/tools/pt_utils/configs/render_batch_3DScanner.yaml'):
+def render_scene_3DScanner(cfg_path='/home/tcluan/C-Code/tools/pt_utils/configs/render_batch_3DScanner.yaml'):
     cfg = yaml.safe_load(Path(cfg_path).read_text())
-    mesh_path, intrinsic_path, pose_path, depth_path = parse_workspace_path(cfg['scene']['workspace_path'])
+    mesh_path, intrinsic_path, pose_path, depth_path = parse_workspace_path_callback['3dscanner'](cfg['scene']['workspace_path'])
     import_mesh(mesh_path)
     num_frame = len(glob.glob(pose_path + '/*.txt'))
     cam_obj = None
     for idx in range(num_frame):
-        intrinsic_file, pose_file = get_camera_param_file_path(intrinsic_path, pose_path, idx)
+        intrinsic_file = get_intrinsic_file_path(intrinsic_path, idx)
+        pose_file = get_pose_file_path(pose_path, idx)
+        scene, cam_obj = import_camera(
+            intrinsic_file,
+            pose_file,
+            cfg['render']['width'],
+            cfg['render']['height'],
+            cfg['render']['sensor_width'],
+            cam_obj=None if idx == 0 else cam_obj,
+        )
+        render_depth(
+            scene,
+            cfg['render']['zNear'],
+            cfg['render']['zFar'],
+            depth_path,
+            idx,
+            enable_png=True,
+        )
+
+
+def render_scene_Scannet(cfg, scene_prefix: str='scene0000_00'):
+    mesh_path, intrinsic_path, pose_path, depth_path = parse_workspace_path_callback['scannet'](
+        cfg['scene']['original_scannet_path'],
+        cfg['scene']['processed_scannet_path'],
+        scene_prefix
+        )
+    import_mesh(mesh_path)
+    num_frame = len(glob.glob(pose_path + '/*.txt'))
+    cam_obj = None
+    intrinsic_file = Path(intrinsic_path) / 'intrinsic_color.txt'
+    for idx in range(num_frame):
+        pose_file = get_pose_file_path(pose_path, idx)
         scene, cam_obj = import_camera(
             intrinsic_file,
             pose_file,
@@ -44,3 +76,8 @@ def render_batch_3DScanner(cfg_path='/home/tcluan/C-Code/tools/pt_utils/configs/
             idx,
             enable_png=True if idx == 0 else False,
         )
+        
+        
+def render_dataset_Scannet(cfg_path='/home/tcluan/C-Code/tools/pt_utils/configs/render_batch_Scannet.yaml'):
+    cfg = yaml.safe_load(Path(cfg_path).read_text())
+    render_scene_Scannet(cfg)

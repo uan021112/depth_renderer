@@ -6,10 +6,39 @@ from .io_utils import load_matrix_from_file
 from .math_utils import calc_coord_transform
 
 
+def enable_gpu(device_type='CUDA', with_cpu=True):
+    pref = bpy.context.preferences
+    cpref = pref.addons["cycles"].preferences
+
+    cpref.refresh_devices()
+
+    activated = []
+    for dev in cpref.devices:
+        if dev.type == 'CPU':
+            dev.use = with_cpu
+        else:
+            dev.use = True
+            activated.append(dev.name)
+
+    cpref.compute_device_type = device_type
+
+    for scene in bpy.data.scenes:
+        scene.cycles.device = 'GPU'
+
+    print("Activated GPUs:", activated)
+    return activated
+
+
 def import_mesh(mesh_path):
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete(use_global=False)
-    bpy.ops.wm.obj_import(filepath=mesh_path)
+    mesh_suffix = Path(mesh_path).suffix
+    if mesh_suffix == '.obj':
+        bpy.ops.wm.obj_import(filepath=mesh_path)
+    elif mesh_suffix == '.ply':
+        bpy.ops.wm.ply_import(filepath=mesh_path)
+    else:
+        raise KeyError("Undefined mesh suffix.")
 
     return bpy.context.object
 
@@ -125,26 +154,3 @@ def render_depth(scene: bpy.types.Scene, zNear: float, zFar: float, output_path:
     if enable_png:
         _collect_new_file(idx, 'png')
     _collect_new_file(idx, 'exr')
-
-
-def enable_gpu(device_type='CUDA', with_cpu=False):
-    pref = bpy.context.preferences
-    cpref = pref.addons["cycles"].preferences
-
-    cpref.refresh_devices()
-
-    activated = []
-    for dev in cpref.devices:
-        if dev.type == 'CPU':
-            dev.use = with_cpu
-        else:
-            dev.use = True
-            activated.append(dev.name)
-
-    cpref.compute_device_type = device_type
-
-    for scene in bpy.data.scenes:
-        scene.cycles.device = 'GPU'
-
-    print("Activated GPUs:", activated)
-    return activated
