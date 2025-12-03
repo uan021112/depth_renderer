@@ -2,11 +2,11 @@ scene:
   original_scannet_path: /home/tcluan/D-Data/ScanNet/scans
   processed_scannet_path: /home/tcluan/D-Data/ExpLog/ScanNet_Processed
   start_from: 0
-  max_num: 1000
+  end_with: 100
 
 render:
   sensor_width: 36.0
-  width: 1920
-  height: 1440
+  width: 1296
+  height: 968
   zNear: 0.01
   zFar: 8.0

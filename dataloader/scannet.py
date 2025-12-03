@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 def parse_workspace_path_scannet(original_path, processed_path, scene_prefix: str='scene0000_00'):
     original = Path(original_path).expanduser() / scene_prefix
     processed = Path(processed_path).expanduser() / scene_prefix
@@ -24,6 +25,7 @@ def parse_workspace_path_scannet(original_path, processed_path, scene_prefix: st
     depth_path = processed / "depth"
 
     return str(mesh_path), str(intrinsic_dir), str(pose_dir), str(depth_path)
+
 
 if __name__ == '__main__':
     a,b,c,d = parse_workspace_path_scannet('/home/tcluan/D-Data/ScanNet/scans', '/home/tcluan/D-Data/ExpLog/ScanNet_Processed', 'scene0000_00')

@@ -1,9 +1,22 @@
 import bpy
+import numpy as np
 from pathlib import Path
 from mathutils import Matrix
 
 from .io_utils import load_matrix_from_file
 from .math_utils import calc_coord_transform
+
+
+def cleanup_blender_memory():
+    """Remove orphan Blender data blocks so multi-scene renders do not leak."""
+
+    bpy.ops.object.select_all(action='SELECT')
+    bpy.ops.object.delete(use_global=False)
+
+    if hasattr(bpy.data, "orphans_purge"):
+        # Run twice to ensure nested dependencies (materials -> images, etc.) go away.
+        for _ in range(2):
+            bpy.data.orphans_purge(do_recursive=True)
 
 
 def enable_gpu(device_type='CUDA', with_cpu=True):
@@ -34,9 +47,9 @@ def import_mesh(mesh_path):
     bpy.ops.object.delete(use_global=False)
     mesh_suffix = Path(mesh_path).suffix
     if mesh_suffix == '.obj':
-        bpy.ops.wm.obj_import(filepath=mesh_path)
+        bpy.ops.wm.obj_import(filepath=mesh_path, forward_axis='Y', up_axis='Z')
     elif mesh_suffix == '.ply':
-        bpy.ops.wm.ply_import(filepath=mesh_path)
+        bpy.ops.wm.ply_import(filepath=mesh_path, forward_axis='Y', up_axis='Z')
     else:
         raise KeyError("Undefined mesh suffix.")
 
@@ -64,15 +77,39 @@ def update_camera(cam_obj: bpy.types.Object, cam_matrix: Matrix, fx: float,
 
 
 def import_camera(intrinsic_path, pose_path, render_width=1920, render_height=1440,
-                  sensor_width=36.0, cam_obj: bpy.types.Camera = None):
-    # TODO: load camera from different datasets
+                  sensor_width=36.0, cam_obj: bpy.types.Camera = None,
+                  is_c2w_pose: bool=True):
     intrinsic = load_matrix_from_file(intrinsic_path)
     fx = intrinsic[0, 0]
-    pose = load_matrix_from_file(pose_path)
+    if is_c2w_pose:
+        c2w = load_matrix_from_file(pose_path)
+    else:
+        c2w = np.linalg.inv(load_matrix_from_file(pose_path))
+    
+    cam_matrix = Matrix(c2w.tolist())
 
-    # transform from 3DScanner to Blender
-    pose = calc_coord_transform('RUB', 'RFU') @ pose
-    cam_matrix = Matrix(pose.tolist())
+    if cam_obj is None:
+        bpy.ops.object.camera_add()
+        cam_obj = bpy.context.object
+
+    scene = update_camera(cam_obj, cam_matrix, fx, render_width, render_height, sensor_width)
+    return scene, cam_obj
+
+
+def import_camera_scannet(intrinsic_path, pose_path, render_width=1920, render_height=1440,
+                  sensor_width=36.0, cam_obj: bpy.types.Camera = None,
+                  is_c2w_pose: bool=True):
+    intrinsic = load_matrix_from_file(intrinsic_path)
+    fx = intrinsic[0, 0]
+    if is_c2w_pose:
+        c2w = load_matrix_from_file(pose_path)
+    else:
+        c2w = np.linalg.inv(load_matrix_from_file(pose_path))
+
+    magic_xform = np.array([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+    c2w = c2w @ magic_xform
+    
+    cam_matrix = Matrix(c2w.tolist())
 
     if cam_obj is None:
         bpy.ops.object.camera_add()

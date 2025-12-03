@@ -35,3 +35,6 @@ def calc_coord_transform(A='RDF', B='RDF'):
     M4x4_A2B[:3, :3] = M_A2B
     
     return M4x4_A2B
+
+if __name__ == '__main__':
+    print(calc_coord_transform('RDF','RFU'))

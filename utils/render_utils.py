@@ -1,11 +1,12 @@
 import glob
+import os
 from pathlib import Path
 
 import yaml
 
 from dataloader import parse_workspace_path_callback
 from .io_utils import get_intrinsic_file_path, get_pose_file_path
-from .blender_utils import import_mesh, import_camera, render_depth
+from .blender_utils import import_mesh, import_camera, import_camera_scannet, render_depth, cleanup_blender_memory
 
 
 def render_single_view(cfg_path='/home/tcluan/C-Code/tools/pt_utils/configs/render_single_view.yaml'):
@@ -58,26 +59,35 @@ def render_scene_Scannet(cfg, scene_prefix: str='scene0000_00'):
     num_frame = len(glob.glob(pose_path + '/*.txt'))
     cam_obj = None
     intrinsic_file = Path(intrinsic_path) / 'intrinsic_color.txt'
-    for idx in range(num_frame):
-        pose_file = get_pose_file_path(pose_path, idx)
-        scene, cam_obj = import_camera(
-            intrinsic_file,
-            pose_file,
-            cfg['render']['width'],
-            cfg['render']['height'],
-            cfg['render']['sensor_width'],
-            cam_obj=None if idx == 0 else cam_obj,
-        )
-        render_depth(
-            scene,
-            cfg['render']['zNear'],
-            cfg['render']['zFar'],
-            depth_path,
-            idx,
-            enable_png=True if idx == 0 else False,
-        )
-        
-        
+
+    try:
+        for idx in range(num_frame):
+            pose_file = get_pose_file_path(pose_path, idx)
+            scene, cam_obj = import_camera_scannet(
+                intrinsic_file,
+                pose_file,
+                cfg['render']['width'],
+                cfg['render']['height'],
+                cfg['render']['sensor_width'],
+                cam_obj=None if idx == 0 else cam_obj,
+            )
+            render_depth(
+                scene,
+                cfg['render']['zNear'],
+                cfg['render']['zFar'],
+                depth_path,
+                idx,
+                # enable_png=True,
+                enable_png=True if idx == 0 else False,
+            )
+    finally:
+        cleanup_blender_memory()
+
+
 def render_dataset_Scannet(cfg_path='/home/tcluan/C-Code/tools/pt_utils/configs/render_batch_Scannet.yaml'):
     cfg = yaml.safe_load(Path(cfg_path).read_text())
-    render_scene_Scannet(cfg)
+    scene_prefix_list = glob.glob(os.path.join(cfg['scene']['original_scannet_path'], '*'))
+    scene_prefix_list.sort()
+    for idx in range(cfg['scene']['start_from'], cfg['scene']['end_with']):
+        scene_prefix = Path(scene_prefix_list[idx]).name
+        render_scene_Scannet(cfg, scene_prefix)
