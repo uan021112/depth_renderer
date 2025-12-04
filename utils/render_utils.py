@@ -86,8 +86,8 @@ def render_scene_Scannet(cfg, scene_prefix: str='scene0000_00'):
 
 def render_dataset_Scannet(cfg_path='/home/tcluan/C-Code/tools/pt_utils/configs/render_batch_Scannet.yaml'):
     cfg = yaml.safe_load(Path(cfg_path).read_text())
-    scene_prefix_list = glob.glob(os.path.join(cfg['scene']['original_scannet_path'], '*'))
+    scene_prefix_list = glob.glob(os.path.join(cfg['scene']['processed_scannet_path'], '*'))
     scene_prefix_list.sort()
-    for idx in range(cfg['scene']['start_from'], cfg['scene']['end_with']):
+    for idx in range(cfg['scene']['start_from'], min(cfg['scene']['end_with'], len(scene_prefix_list))):
         scene_prefix = Path(scene_prefix_list[idx]).name
         render_scene_Scannet(cfg, scene_prefix)

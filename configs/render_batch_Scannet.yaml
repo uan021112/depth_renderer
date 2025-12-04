@@ -1,6 +1,6 @@
 scene:
   original_scannet_path: /home/tcluan/D-Data/ScanNet/scans
-  processed_scannet_path: /home/tcluan/D-Data/ExpLog/ScanNet_Processed
+  processed_scannet_path: /home/tcluan/D-Data/ExpLog/ScanNet_Shortcut
   start_from: 0
   end_with: 100
 
