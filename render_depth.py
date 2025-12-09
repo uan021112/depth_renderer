@@ -11,4 +11,4 @@ from utils.render_utils import render_scene_3DScanner
     
 if __name__ == '__main__':
     enable_gpu()
-    render_scene_3DScanner()
+    render_scene_3DScanner(cfg_path='/home/tcluan/C-Code/tools/pt_utils/configs/render_batch_3DScanner.yaml')
