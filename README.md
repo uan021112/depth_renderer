@@ -1,3 +1,5 @@
+blender version: 4.0
+
 usage:
 
 1. select appropriate render function in utils/render_utils.py
